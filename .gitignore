@@ -1,0 +1,16 @@
+target
+
+# IntelliJ project files
+*.iml
+*.iws
+*.ipr
+.idea
+out
+
+# Eclipse and VSCode project files
+.settings
+.classpath
+.project
+.factorypath
+build
+.vscode
