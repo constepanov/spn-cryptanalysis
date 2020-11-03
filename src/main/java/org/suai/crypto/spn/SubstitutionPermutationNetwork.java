@@ -3,8 +3,8 @@ package org.suai.crypto.spn;
 import com.google.common.base.Splitter;
 import org.apache.commons.collections4.BidiMap;
 import org.apache.commons.collections4.bidimap.DualHashBidiMap;
+import org.suai.crypto.util.BinaryString;
 
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 public class SubstitutionPermutationNetwork {
@@ -19,6 +19,7 @@ public class SubstitutionPermutationNetwork {
     }
 
     private void initSBox() {
+        /*
         sBox.put("000", "110");
         sBox.put("001", "111");
         sBox.put("010", "100");
@@ -27,35 +28,47 @@ public class SubstitutionPermutationNetwork {
         sBox.put("101", "101");
         sBox.put("110", "001");
         sBox.put("111", "000");
+         */
+
+
+        // S-box from example
+        sBox.put("000", "111");
+        sBox.put("001", "001");
+        sBox.put("010", "100");
+        sBox.put("011", "000");
+        sBox.put("100", "110");
+        sBox.put("101", "010");
+        sBox.put("110", "101");
+        sBox.put("111", "011");
     }
 
     public String encrypt(String plaintext, String key) {
-        String sBoxInput = xorBitString(plaintext, key);
+        String sBoxInput = BinaryString.xor(plaintext, key);
         String sBoxOutput = applySBox(sBoxInput);
         String permutationOutput = permuteString(sBoxOutput);
 
-        sBoxInput = xorBitString(permutationOutput, key);
+        sBoxInput = BinaryString.xor(permutationOutput, key);
         sBoxOutput = applySBox(sBoxInput);
         permutationOutput = permuteString(sBoxOutput);
 
-        sBoxInput = xorBitString(permutationOutput, key);
+        sBoxInput = BinaryString.xor(permutationOutput, key);
         sBoxOutput = applySBox(sBoxInput);
-        sBoxInput = xorBitString(sBoxOutput, key);
+        sBoxInput = BinaryString.xor(sBoxOutput, key);
         return sBoxInput;
     }
 
     public String decrypt(String ciphertext, String key) {
-        String sBoxInput = xorBitString(ciphertext, key);
+        String sBoxInput = BinaryString.xor(ciphertext, key);
         String sBoxOutput = applyInverseSBox(sBoxInput);
-        String permutationInput = xorBitString(sBoxOutput, key);
+        String permutationInput = BinaryString.xor(sBoxOutput, key);
 
         sBoxInput = permuteString(permutationInput);
         sBoxOutput = applyInverseSBox(sBoxInput);
-        permutationInput = xorBitString(sBoxOutput, key);
+        permutationInput = BinaryString.xor(sBoxOutput, key);
 
         sBoxInput = permuteString(permutationInput);
         sBoxOutput = applyInverseSBox(sBoxInput);
-        permutationInput = xorBitString(sBoxOutput, key);
+        permutationInput = BinaryString.xor(sBoxOutput, key);
         return permutationInput;
     }
 
@@ -75,17 +88,14 @@ public class SubstitutionPermutationNetwork {
         return result.toString();
     }
 
-    public String xorBitString(String block, String key) {
-        return IntStream
-                .range(0, block.length())
-                .mapToObj(i -> String.valueOf((int) block.charAt(i) ^ (int) key.charAt(i)))
-                .collect(Collectors.joining());
-    }
-
     public String permuteString(String block) {
         char[] result = new char[block.length()];
         IntStream.range(0, block.length())
                 .forEach(i -> result[bitPermutation[i]] = block.charAt(i));
         return String.valueOf(result);
+    }
+
+    public BidiMap<String, String> getSBox() {
+        return sBox;
     }
 }
