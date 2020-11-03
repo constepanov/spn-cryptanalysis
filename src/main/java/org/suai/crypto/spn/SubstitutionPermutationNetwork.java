@@ -7,9 +7,10 @@ import org.suai.crypto.util.BinaryString;
 
 import java.util.stream.IntStream;
 
+import static org.suai.crypto.spn.SPNConstants.S_BOX_INPUT_SIZE;
+
 public class SubstitutionPermutationNetwork {
 
-    private final int S_BOX_INPUT_SIZE = 3;
     private final int[] bitPermutation = {0, 3, 6, 1, 4, 7, 2, 5, 8};
     private final BidiMap<String, String> sBox;
 

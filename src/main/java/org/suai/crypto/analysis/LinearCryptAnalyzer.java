@@ -6,15 +6,18 @@ import org.suai.crypto.util.BinaryString;
 import java.util.Map;
 import java.util.stream.IntStream;
 
+import static org.suai.crypto.spn.SPNConstants.S_BOX_INPUT_SIZE;
+
 public class LinearCryptAnalyzer {
 
     public static int[][] buildApproximationTable(BidiMap<String, String> sBox) {
-        int[][] table = new int[7][7];
-        for (int i = 0; i < 7; i++) {
-            for (int j = 0; j < 7; j++) {
+        int tableSize = (int) (Math.pow(2, S_BOX_INPUT_SIZE) - 1);
+        int[][] table = new int[tableSize][tableSize];
+        for (int i = 0; i < tableSize; i++) {
+            for (int j = 0; j < tableSize; j++) {
                 int numberOfMatches = 0;
-                String inputMask = BinaryString.valueOf(i + 1, 3);
-                String outputMask = BinaryString.valueOf(j + 1, 3);
+                String inputMask = BinaryString.valueOf(i + 1, S_BOX_INPUT_SIZE);
+                String outputMask = BinaryString.valueOf(j + 1, S_BOX_INPUT_SIZE);
                 for (Map.Entry<String, String> entry : sBox.entrySet()) {
                     String key = entry.getKey();
                     String value = entry.getValue();
