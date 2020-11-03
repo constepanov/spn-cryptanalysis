@@ -19,16 +19,11 @@ public class LinearCryptAnalyzer {
                 String inputMask = BinaryString.valueOf(i + 1, S_BOX_INPUT_SIZE);
                 String outputMask = BinaryString.valueOf(j + 1, S_BOX_INPUT_SIZE);
                 for (Map.Entry<String, String> entry : sBox.entrySet()) {
-                    String key = entry.getKey();
-                    String value = entry.getValue();
+                    String sBoxInput = entry.getKey();
+                    String sBoxOutput = entry.getValue();
 
-                    int inputCombination = IntStream.range(0, inputMask.length())
-                            .map(k -> (int) inputMask.charAt(k) & (int) key.charAt(k))
-                            .reduce(0, (a, b) -> a ^ b);
-
-                    int outputCombination = IntStream.range(0, outputMask.length())
-                            .map(k -> (int) outputMask.charAt(k) & (int) value.charAt(k))
-                            .reduce(0, (a, b) -> a ^ b);
+                    int inputCombination = getCombinationResult(inputMask, sBoxInput);
+                    int outputCombination = getCombinationResult(outputMask, sBoxOutput);
 
                     if (inputCombination == outputCombination) {
                         numberOfMatches++;
@@ -38,5 +33,11 @@ public class LinearCryptAnalyzer {
             }
         }
         return table;
+    }
+
+    private static int getCombinationResult(String mask, String value) {
+        return IntStream.range(0, mask.length())
+                .map(i -> (int) mask.charAt(i) & (int) value.charAt(i))
+                .reduce(0, (a, b) -> a ^ b);
     }
 }
