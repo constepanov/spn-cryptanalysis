@@ -26,4 +26,8 @@ public class BinaryString {
     public static String valueOf(int value, int length) {
         return Strings.padStart(Integer.toBinaryString(value), length, '0');
     }
+
+    public static boolean isZero(String value) {
+        return value.equals(valueOf(0, value.length()));
+    }
 }

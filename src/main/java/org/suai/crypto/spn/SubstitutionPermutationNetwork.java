@@ -21,6 +21,7 @@ public class SubstitutionPermutationNetwork {
 
     private void initSBox() {
         /*
+        // 7
         sBox.put("000", "110");
         sBox.put("001", "111");
         sBox.put("010", "100");
@@ -29,9 +30,9 @@ public class SubstitutionPermutationNetwork {
         sBox.put("101", "101");
         sBox.put("110", "001");
         sBox.put("111", "000");
-         */
+        */
 
-
+        /*
         // S-box from example
         sBox.put("000", "111");
         sBox.put("001", "001");
@@ -41,6 +42,27 @@ public class SubstitutionPermutationNetwork {
         sBox.put("101", "010");
         sBox.put("110", "101");
         sBox.put("111", "011");
+         */
+
+        /*
+        sBox.put("000", "110");
+        sBox.put("001", "011");
+        sBox.put("010", "100");
+        sBox.put("011", "001");
+        sBox.put("100", "000");
+        sBox.put("101", "111");
+        sBox.put("110", "010");
+        sBox.put("111", "101");
+         */
+
+        sBox.put("000", "111");
+        sBox.put("001", "110");
+        sBox.put("010", "011");
+        sBox.put("011", "010");
+        sBox.put("100", "000");
+        sBox.put("101", "001");
+        sBox.put("110", "101");
+        sBox.put("111", "100");
     }
 
     public String encrypt(String plaintext, String key) {
