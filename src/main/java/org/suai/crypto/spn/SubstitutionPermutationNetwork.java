@@ -5,13 +5,11 @@ import org.apache.commons.collections4.BidiMap;
 import org.apache.commons.collections4.bidimap.DualHashBidiMap;
 import org.suai.crypto.util.BinaryString;
 
-import java.util.stream.IntStream;
-
+import static org.suai.crypto.spn.SPNConstants.BIT_PERMUTATION;
 import static org.suai.crypto.spn.SPNConstants.S_BOX_INPUT_SIZE;
 
 public class SubstitutionPermutationNetwork {
 
-    private final int[] bitPermutation = {0, 3, 6, 1, 4, 7, 2, 5, 8};
     private final BidiMap<String, String> sBox;
 
     public SubstitutionPermutationNetwork() {
@@ -68,11 +66,11 @@ public class SubstitutionPermutationNetwork {
     public String encrypt(String plaintext, String key) {
         String sBoxInput = BinaryString.xor(plaintext, key);
         String sBoxOutput = applySBox(sBoxInput);
-        String permutationOutput = permuteString(sBoxOutput);
+        String permutationOutput = BinaryString.permute(sBoxOutput, BIT_PERMUTATION);
 
         sBoxInput = BinaryString.xor(permutationOutput, key);
         sBoxOutput = applySBox(sBoxInput);
-        permutationOutput = permuteString(sBoxOutput);
+        permutationOutput = BinaryString.permute(sBoxOutput, BIT_PERMUTATION);
 
         sBoxInput = BinaryString.xor(permutationOutput, key);
         sBoxOutput = applySBox(sBoxInput);
@@ -85,11 +83,11 @@ public class SubstitutionPermutationNetwork {
         String sBoxOutput = applyInverseSBox(sBoxInput);
         String permutationInput = BinaryString.xor(sBoxOutput, key);
 
-        sBoxInput = permuteString(permutationInput);
+        sBoxInput = BinaryString.permute(permutationInput, BIT_PERMUTATION);
         sBoxOutput = applyInverseSBox(sBoxInput);
         permutationInput = BinaryString.xor(sBoxOutput, key);
 
-        sBoxInput = permuteString(permutationInput);
+        sBoxInput = BinaryString.permute(permutationInput, BIT_PERMUTATION);
         sBoxOutput = applyInverseSBox(sBoxInput);
         permutationInput = BinaryString.xor(sBoxOutput, key);
         return permutationInput;
@@ -109,13 +107,6 @@ public class SubstitutionPermutationNetwork {
             result.append(sBox.getKey(input));
         }
         return result.toString();
-    }
-
-    public String permuteString(String block) {
-        char[] result = new char[block.length()];
-        IntStream.range(0, block.length())
-                .forEach(i -> result[bitPermutation[i]] = block.charAt(i));
-        return String.valueOf(result);
     }
 
     public BidiMap<String, String> getSBox() {

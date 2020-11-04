@@ -27,6 +27,13 @@ public class BinaryString {
         return Strings.padStart(Integer.toBinaryString(value), length, '0');
     }
 
+    public static String permute(String block, int[] bitPermutation) {
+        char[] result = new char[block.length()];
+        IntStream.range(0, block.length())
+                .forEach(i -> result[bitPermutation[i]] = block.charAt(i));
+        return String.valueOf(result);
+    }
+
     public static boolean isZero(String value) {
         return value.equals(valueOf(0, value.length()));
     }

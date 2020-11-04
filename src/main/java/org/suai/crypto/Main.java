@@ -7,6 +7,7 @@ import org.suai.crypto.util.EquationElementType;
 import org.suai.crypto.util.LinearApproximation;
 
 import java.util.Arrays;
+import java.util.stream.IntStream;
 
 public class Main {
     public static void main(String[] args) {
@@ -15,12 +16,7 @@ public class Main {
         for (int[] row : table) {
             System.out.println(Arrays.toString(row));
         }
-        EquationElement elem = new EquationElement(7, 1, EquationElementType.KEY);
-        EquationElement elem2 = new EquationElement(8, 1, EquationElementType.KEY);
-        EquationElement elem3 = new EquationElement(9, 1, EquationElementType.KEY);
-        LinearApproximation appr = new LinearApproximation();
-        appr.setLeftPart(Arrays.asList(elem, elem2, elem3));
-        appr.setRightPart(Arrays.asList(elem2,elem3));
-        System.out.println(appr);
+        String input = "000010000";
+        LinearCryptAnalyzer.buildSPNApproximation(table, input);
     }
 }

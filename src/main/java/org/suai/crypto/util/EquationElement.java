@@ -3,13 +3,18 @@ package org.suai.crypto.util;
 import java.util.Objects;
 
 public class EquationElement {
-    private int bitNumber;
     private int roundNumber;
+    private int bitNumber;
     private EquationElementType type;
 
-    public EquationElement(int bitNumber, int roundNumber, EquationElementType type) {
+    public EquationElement(int bitNumber, EquationElementType type) {
         this.bitNumber = bitNumber;
+        this.type = type;
+    }
+
+    public EquationElement(int roundNumber, int bitNumber, EquationElementType type) {
         this.roundNumber = roundNumber;
+        this.bitNumber = bitNumber;
         this.type = type;
     }
 
@@ -35,5 +40,17 @@ public class EquationElement {
     @Override
     public int hashCode() {
         return Objects.hash(bitNumber, roundNumber, type);
+    }
+
+    public int getRoundNumber() {
+        return roundNumber;
+    }
+
+    public int getBitNumber() {
+        return bitNumber;
+    }
+
+    public EquationElementType getType() {
+        return type;
     }
 }
