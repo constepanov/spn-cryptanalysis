@@ -51,7 +51,10 @@ public class SubstitutionPermutationNetwork {
         sBox.put("101", "111");
         sBox.put("110", "010");
         sBox.put("111", "101");
+
          */
+
+
 
         sBox.put("000", "111");
         sBox.put("001", "110");
@@ -61,6 +64,7 @@ public class SubstitutionPermutationNetwork {
         sBox.put("101", "001");
         sBox.put("110", "101");
         sBox.put("111", "100");
+
     }
 
     public String encrypt(String plaintext, String key) {

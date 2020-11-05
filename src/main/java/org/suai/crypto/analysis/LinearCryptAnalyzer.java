@@ -3,20 +3,17 @@ package org.suai.crypto.analysis;
 import com.google.common.base.Splitter;
 import org.apache.commons.collections4.BidiMap;
 import org.apache.commons.collections4.IterableUtils;
+import org.apache.commons.math3.fraction.Fraction;
 import org.suai.crypto.util.BinaryString;
 import org.suai.crypto.util.EquationElement;
 import org.suai.crypto.util.EquationElementType;
 import org.suai.crypto.util.LinearApproximation;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import static org.suai.crypto.spn.SPNConstants.BIT_PERMUTATION;
-import static org.suai.crypto.spn.SPNConstants.S_BOX_INPUT_SIZE;
+import static org.suai.crypto.spn.SPNConstants.*;
 import static org.suai.crypto.util.EquationElementType.*;
 
 public class LinearCryptAnalyzer {
@@ -52,10 +49,134 @@ public class LinearCryptAnalyzer {
                 .reduce(0, (a, b) -> a ^ b);
     }
 
+    public static LinearApproximation buildSPNApproximation(int[][] table, String inputBlock) {
+        Map<Integer, List<LinearApproximation>> approximations = new LinkedHashMap<>();
+
+        List<String> firstRoundInputs = getRoundInputs(inputBlock);
+        List<String> roundOutputs = new ArrayList<>();
+        List<LinearApproximation> firstRoundApproximations = getRoundApproximations(table,
+                1,
+                firstRoundInputs,
+                roundOutputs);
+        System.out.println(firstRoundApproximations);
+        simplifyRightPartInFirstRoundApproximations(firstRoundApproximations);
+        System.out.println(firstRoundApproximations);
+        approximations.put(1, firstRoundApproximations);
+
+        for (int i = 1; i < NUMBER_OF_ROUNDS; i++) {
+            int roundNumber = i + 1;
+            String roundBlock = BinaryString.permute(String.join("", roundOutputs), BIT_PERMUTATION);
+            List<String> roundInputs = getRoundInputs(roundBlock);
+            roundOutputs.clear();
+            List<LinearApproximation> roundApproximations = getRoundApproximations(table,
+                    roundNumber,
+                    roundInputs,
+                    roundOutputs);
+            System.out.println(roundApproximations);
+            simplifyRightPartInRoundApproximations(roundApproximations);
+            System.out.println(roundApproximations);
+            if (i == NUMBER_OF_ROUNDS - 1) {
+                simplifyLeftPartInLastRoundApproximations(roundApproximations);
+                System.out.println(roundApproximations);
+            }
+            approximations.put(roundNumber, roundApproximations);
+        }
+
+        Map.Entry<Integer, List<LinearApproximation>> resultEntry = approximations.entrySet()
+                .stream()
+                .filter((entry) -> entry.getValue().size() == 1)
+                .findFirst()
+                .orElseThrow(() -> new RuntimeException("Can't build linear approximation with this input"));
+        LinearApproximation resultApproximation = resultEntry.getValue().get(0);
+        int resultApproximationRoundNumber = resultEntry.getKey();
+
+        // Now we must combine round approximations into final approximation
+
+        List<LinearApproximation> usedApproximations = new ArrayList<>();
+        usedApproximations.add(resultApproximation);
+
+        int leftIterations = NUMBER_OF_ROUNDS - resultApproximationRoundNumber;
+        int rightIterations = NUMBER_OF_ROUNDS - leftIterations - 1;
+
+        for (int i = 0; i < leftIterations; i++) {
+            List<EquationElement> updatedLeftPart = new ArrayList<>();
+            List<EquationElement> replacedElements = new ArrayList<>();
+            for (EquationElement element : resultApproximation.getLeftPart()) {
+                if (element.getType() == PLAINTEXT || element.getType() == CIPHERTEXT || element.getType() == KEY) {
+                    continue;
+                }
+                int approximationIndex = element.getRoundNumber() + 1;
+                List<LinearApproximation> roundApproximations = approximations.get(approximationIndex);
+                for (LinearApproximation approximation : roundApproximations) {
+                    if (approximation.getRightPart().contains(element) && !usedApproximations.contains(approximation)) {
+                        LinearApproximation replacementEquation = approximation.moveToLeft(element);
+                        LinearApproximation temp = new LinearApproximation();
+                        temp.addToLeft(element);
+                        temp = temp.replaceInLeft(replacementEquation);
+                        updatedLeftPart.addAll(temp.getLeftPart());
+                        usedApproximations.add(approximation);
+                        replacedElements.add(element);
+                    }
+                }
+            }
+            resultApproximation.getLeftPart()
+                    .stream()
+                    .filter(element -> !replacedElements.contains(element))
+                    .forEach(updatedLeftPart::add);
+            resultApproximation.setLeftPart(updatedLeftPart);
+            System.out.println(resultApproximation);
+        }
+
+        for (int i = 0; i < rightIterations; i++) {
+            List<EquationElement> updatedRightPart = new ArrayList<>();
+            List<EquationElement> replacedElements = new ArrayList<>();
+            for (EquationElement element : resultApproximation.getRightPart()) {
+                if (element.getType() == PLAINTEXT || element.getType() == CIPHERTEXT || element.getType() == KEY) {
+                    continue;
+                }
+                int approximationIndex = element.getRoundNumber();
+                List<LinearApproximation> roundApproximations = approximations.get(approximationIndex);
+                for (LinearApproximation approximation : roundApproximations) {
+                    if (approximation.getLeftPart().contains(element) && !usedApproximations.contains(approximation)) {
+                        LinearApproximation replacementEquation = approximation.moveToLeft(element);
+                        LinearApproximation temp = new LinearApproximation();
+                        temp.addToLeft(element);
+                        temp = temp.replaceInLeft(replacementEquation);
+                        updatedRightPart.addAll(temp.getLeftPart());
+                        usedApproximations.add(approximation);
+                        replacedElements.add(element);
+                    }
+                }
+            }
+            resultApproximation.getRightPart()
+                    .stream()
+                    .filter(element -> !replacedElements.contains(element))
+                    .forEach(updatedRightPart::add);
+            resultApproximation.setRightPart(updatedRightPart);
+            System.out.println(resultApproximation);
+        }
+
+        resultApproximation.simplify();
+        System.out.println(resultApproximation);
+        resultApproximation.transformToStandardForm();
+
+        Fraction resultProbability = getSPNApproximationProbability(approximations);
+        resultApproximation.setProbability(resultProbability);
+        System.out.println("Final approximation: " + resultApproximation);
+
+        return resultApproximation;
+    }
+
+    private static List<String> getRoundInputs(String block) {
+        return IterableUtils.toList(Splitter
+                .fixedLength(S_BOX_INPUT_SIZE)
+                .split(block));
+    }
+
     private static List<LinearApproximation> getRoundApproximations(int[][] table,
-                                                                   int roundNumber,
-                                                                   List<String> roundInputs,
-                                                                   List<String> roundOutputs) {
+                                                                    int roundNumber,
+                                                                    List<String> roundInputs,
+                                                                    List<String> roundOutputs) {
         int maxNumberOfMatches = (int) Math.pow(2, S_BOX_INPUT_SIZE);
         List<LinearApproximation> roundApproximations = new ArrayList<>();
         for (int i = 0; i < roundInputs.size(); i++) {
@@ -67,87 +188,13 @@ public class LinearCryptAnalyzer {
                 roundOutputs.add(sBoxOutput);
                 List<EquationElement> leftPart = getApproximationPart(roundNumber, i, sBoxOutput, S_BOX_OUTPUT);
                 List<EquationElement> rightPart = getApproximationPart(roundNumber, i, roundInput, S_BOX_INPUT);
-                double probability = (double) table[row][column] / maxNumberOfMatches;
+                Fraction probability = new Fraction(table[row][column], maxNumberOfMatches);
                 roundApproximations.add(new LinearApproximation(leftPart, rightPart, probability));
             } else {
                 roundOutputs.add(BinaryString.valueOf(0, S_BOX_INPUT_SIZE));
             }
         }
         return roundApproximations;
-    }
-
-    private static List<String> getRoundInputs(String block) {
-        return IterableUtils.toList(Splitter
-                .fixedLength(S_BOX_INPUT_SIZE)
-                .split(block));
-    }
-
-    public static List<LinearApproximation> buildSPNApproximation(int[][] table, String inputBlock) {
-
-        int roundNumber = 1;
-        List<String> firstRoundOutputs = new ArrayList<>();
-        List<String> secondRoundOutputs = new ArrayList<>();
-        List<String> thirdRoundOutputs = new ArrayList<>();
-
-        List<String> firstRoundInputs = getRoundInputs(inputBlock);
-
-        List<LinearApproximation> firstRoundApproximations = getRoundApproximations(table,
-                roundNumber,
-                firstRoundInputs,
-                firstRoundOutputs);
-        System.out.println(firstRoundApproximations);
-        simplifyRightPartInFirstRoundApproximations(firstRoundApproximations);
-        System.out.println(firstRoundApproximations);
-
-        roundNumber = 2;
-        String secondRoundBlock = BinaryString.permute(String.join("", firstRoundOutputs), BIT_PERMUTATION);
-        List<String> secondRoundInputs = getRoundInputs(secondRoundBlock);
-
-        List<LinearApproximation> secondRoundApproximations = getRoundApproximations(table,
-                roundNumber,
-                secondRoundInputs,
-                secondRoundOutputs);
-        System.out.println(secondRoundApproximations);
-        simplifyRightPartInRoundApproximations(secondRoundApproximations);
-        System.out.println(secondRoundApproximations);
-
-        roundNumber = 3;
-        String thirdRoundBlock = BinaryString.permute(String.join("", secondRoundOutputs), BIT_PERMUTATION);
-        List<String> thirdRoundInputs = getRoundInputs(thirdRoundBlock);
-
-        List<LinearApproximation> thirdRoundApproximations = getRoundApproximations(table,
-                roundNumber,
-                thirdRoundInputs,
-                thirdRoundOutputs);
-        System.out.println(thirdRoundApproximations);
-        simplifyRightPartInRoundApproximations(thirdRoundApproximations);
-        System.out.println(thirdRoundApproximations);
-        simplifyLeftPartInThirdRoundApproximations(thirdRoundApproximations);
-        System.out.println(thirdRoundApproximations);
-
-        LinearApproximation resultApproximation = null;
-        List<List<LinearApproximation>> approximations = Arrays.asList(firstRoundApproximations,
-                secondRoundApproximations,
-                thirdRoundApproximations);
-        for (List<LinearApproximation> roundApproximations : approximations) {
-            if (roundApproximations.size() == 1) {
-                resultApproximation = roundApproximations.get(0);
-                break;
-            }
-        }
-
-        if (resultApproximation == null) {
-            throw new RuntimeException("Can't build linear approximation with this input");
-        }
-
-        // Now we must build one final approximation
-        for (EquationElement element : resultApproximation.getLeftPart()) {
-            for (List<LinearApproximation> roundApproximations : approximations) {
-                LinearApproximation replacementEquation = resultApproximation.moveToLeft(element);
-            }
-        }
-
-        return thirdRoundApproximations;
     }
 
     private static void simplifyRightPartInFirstRoundApproximations(List<LinearApproximation> firstRoundApproximations) {
@@ -176,7 +223,7 @@ public class LinearCryptAnalyzer {
         }
     }
 
-    private static void simplifyLeftPartInThirdRoundApproximations(List<LinearApproximation> roundApproximations) {
+    private static void simplifyLeftPartInLastRoundApproximations(List<LinearApproximation> roundApproximations) {
         for (LinearApproximation approximation : roundApproximations) {
             List<EquationElement> leftPart = approximation.getLeftPart();
             List<EquationElement> updatedLeftPart = new ArrayList<>();
@@ -196,7 +243,20 @@ public class LinearCryptAnalyzer {
                 .collect(Collectors.toList());
     }
 
+    private static Fraction getSPNApproximationProbability(Map<Integer, List<LinearApproximation>> approximations) {
+        int n = approximations.values().stream().mapToInt(List::size).sum();
+        Fraction probability = new Fraction(Math.pow(2, n - 1));
+        for (List<LinearApproximation> roundApproximations : approximations.values()) {
+            for (LinearApproximation approximation : roundApproximations) {
+                Fraction factor = approximation.getProbability().subtract(Fraction.ONE_HALF);
+                probability = probability.multiply(factor);
+            }
+        }
+        return Fraction.ONE_HALF.add(probability);
+    }
+
     public static int getTableColumn(int[][] table, int row) {
+        // Should this function return min or max?
         int minIndex = indexOfMin(table[row]);
         if (table[row][minIndex] == 0) {
             return minIndex;
