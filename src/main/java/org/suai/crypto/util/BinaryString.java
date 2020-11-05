@@ -2,6 +2,7 @@ package org.suai.crypto.util;
 
 import com.google.common.base.Strings;
 
+import java.security.SecureRandom;
 import java.util.function.IntFunction;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -36,5 +37,12 @@ public class BinaryString {
 
     public static boolean isZero(String value) {
         return value.equals(valueOf(0, value.length()));
+    }
+
+    public static String random(int length) {
+        SecureRandom random = new SecureRandom();
+        return IntStream.range(0, length)
+                .mapToObj(i -> String.valueOf(Math.abs(random.nextInt() % 2)))
+                .collect(Collectors.joining());
     }
 }

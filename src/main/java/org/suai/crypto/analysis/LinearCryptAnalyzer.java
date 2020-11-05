@@ -4,6 +4,7 @@ import com.google.common.base.Splitter;
 import org.apache.commons.collections4.BidiMap;
 import org.apache.commons.collections4.IterableUtils;
 import org.apache.commons.math3.fraction.Fraction;
+import org.suai.crypto.spn.SubstitutionPermutationNetwork;
 import org.suai.crypto.util.BinaryString;
 import org.suai.crypto.util.EquationElement;
 import org.suai.crypto.util.EquationElementType;
@@ -47,6 +48,17 @@ public class LinearCryptAnalyzer {
         return IntStream.range(0, mask.length())
                 .map(i -> (int) mask.charAt(i) & (int) value.charAt(i))
                 .reduce(0, (a, b) -> a ^ b);
+    }
+
+    public static Map<String, String> generateCiphertextAndPlaintext(int count, String key) {
+        Map<String, String> pairs = new HashMap<>();
+        SubstitutionPermutationNetwork spn = new SubstitutionPermutationNetwork();
+        for (int i = 0; i < count; i++) {
+            String plaintext = BinaryString.random(BLOCK_SIZE);
+            String ciphertext = spn.encrypt(plaintext, key);
+            pairs.put(plaintext, ciphertext);
+        }
+        return pairs;
     }
 
     public static LinearApproximation buildSPNApproximation(int[][] table, String inputBlock) {
@@ -244,6 +256,7 @@ public class LinearCryptAnalyzer {
     }
 
     private static Fraction getSPNApproximationProbability(Map<Integer, List<LinearApproximation>> approximations) {
+        // Piling-Up Lemma
         int n = approximations.values().stream().mapToInt(List::size).sum();
         Fraction probability = new Fraction(Math.pow(2, n - 1));
         for (List<LinearApproximation> roundApproximations : approximations.values()) {
