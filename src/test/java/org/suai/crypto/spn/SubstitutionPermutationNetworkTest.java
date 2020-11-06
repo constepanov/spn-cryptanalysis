@@ -3,10 +3,10 @@ package org.suai.crypto.spn;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-public class SubstitutionPermutationNetworkTest {
+class SubstitutionPermutationNetworkTest {
 
     @Test
-    public void testSuccessDecrypt() {
+    void testSuccessDecrypt() {
         String plaintext = "101001111";
         String key = "101010100";
         SubstitutionPermutationNetwork spn = new SubstitutionPermutationNetwork();

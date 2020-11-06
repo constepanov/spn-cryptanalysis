@@ -11,6 +11,8 @@ import static java.lang.Character.getNumericValue;
 
 public class BinaryString {
 
+    private BinaryString() {}
+
     public static String xor(String first, String second) {
         return applyBitOperation(first.length(),
                 i -> String.valueOf(getNumericValue(first.charAt(i)) ^ getNumericValue(second.charAt(i))));

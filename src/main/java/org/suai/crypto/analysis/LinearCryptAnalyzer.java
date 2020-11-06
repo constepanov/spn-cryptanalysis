@@ -4,6 +4,7 @@ import com.google.common.base.Splitter;
 import org.apache.commons.collections4.BidiMap;
 import org.apache.commons.collections4.IterableUtils;
 import org.apache.commons.math3.fraction.Fraction;
+import org.apache.log4j.Logger;
 import org.suai.crypto.spn.SubstitutionPermutationNetwork;
 import org.suai.crypto.util.BinaryString;
 import org.suai.crypto.util.EquationElement;
@@ -19,7 +20,9 @@ import static org.suai.crypto.util.EquationElementType.*;
 
 public class LinearCryptAnalyzer {
 
-    private SubstitutionPermutationNetwork spn;
+    private static final Logger log = Logger.getLogger(LinearCryptAnalyzer.class);
+
+    private final SubstitutionPermutationNetwork spn;
 
     public LinearCryptAnalyzer(SubstitutionPermutationNetwork spn) {
         this.spn = spn;
@@ -65,7 +68,7 @@ public class LinearCryptAnalyzer {
             String plaintext = BinaryString.random(blockSize);
             String ciphertext = spn.encrypt(plaintext, key);
             if (i < 5) {
-                System.out.println(plaintext + " : " + ciphertext);
+                log.debug(plaintext + " : " + ciphertext);
             }
             pairs.put(plaintext, ciphertext);
         }
@@ -130,9 +133,9 @@ public class LinearCryptAnalyzer {
                 1,
                 firstRoundInputs,
                 roundOutputs);
-        System.out.println(firstRoundApproximations);
+        log.debug(firstRoundApproximations);
         simplifyRightPartInFirstRoundApproximations(firstRoundApproximations);
-        System.out.println(firstRoundApproximations);
+        log.debug(firstRoundApproximations);
         approximations.put(1, firstRoundApproximations);
 
         int numberOfRounds = spn.getNumberOfRounds();
@@ -147,19 +150,19 @@ public class LinearCryptAnalyzer {
                     roundNumber,
                     roundInputs,
                     roundOutputs);
-            System.out.println(roundApproximations);
+            log.debug(roundApproximations);
             simplifyRightPartInRoundApproximations(roundApproximations);
-            System.out.println(roundApproximations);
+            log.debug(roundApproximations);
             if (i == numberOfRounds - 1) {
                 simplifyLeftPartInLastRoundApproximations(roundApproximations);
-                System.out.println(roundApproximations);
+                log.debug(roundApproximations);
             }
             approximations.put(roundNumber, roundApproximations);
         }
 
         Map.Entry<Integer, List<LinearApproximation>> resultEntry = approximations.entrySet()
                 .stream()
-                .filter((entry) -> entry.getValue().size() == 1)
+                .filter(entry -> entry.getValue().size() == 1)
                 .findFirst()
                 .orElseThrow(() -> new RuntimeException("Can't build linear approximation with this input"));
         LinearApproximation resultApproximation = resultEntry.getValue().get(0);
@@ -199,7 +202,7 @@ public class LinearCryptAnalyzer {
                     .filter(element -> !replacedElements.contains(element))
                     .forEach(updatedLeftPart::add);
             resultApproximation.setLeftPart(updatedLeftPart);
-            System.out.println(resultApproximation);
+            log.debug(resultApproximation);
         }
 
         for (int i = 0; i < rightIterations; i++) {
@@ -228,16 +231,16 @@ public class LinearCryptAnalyzer {
                     .filter(element -> !replacedElements.contains(element))
                     .forEach(updatedRightPart::add);
             resultApproximation.setRightPart(updatedRightPart);
-            System.out.println(resultApproximation);
+            log.debug(resultApproximation);
         }
 
         resultApproximation.simplify();
-        System.out.println(resultApproximation);
-        resultApproximation.transformToStandardForm();
+        log.debug("Simplified: " + resultApproximation);
+        resultApproximation.toStandardForm();
 
         Fraction resultProbability = getSPNApproximationProbability(approximations);
         resultApproximation.setProbability(resultProbability);
-        System.out.println("Final approximation: " + resultApproximation);
+        log.debug("Final approximation: " + resultApproximation);
 
         return resultApproximation;
     }

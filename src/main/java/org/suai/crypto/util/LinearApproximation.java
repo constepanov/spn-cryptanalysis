@@ -66,7 +66,7 @@ public class LinearApproximation {
         leftPart = simplifiedLeftPart;
     }
 
-    public void transformToStandardForm() {
+    public void toStandardForm() {
         List<EquationElement> updatedLeftPart = new ArrayList<>();
         List<EquationElement> updatedRightPart = new ArrayList<>();
         for (EquationElement element : leftPart) {
