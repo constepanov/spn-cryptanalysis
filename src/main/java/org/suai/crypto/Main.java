@@ -1,6 +1,7 @@
 package org.suai.crypto;
 
 import org.suai.crypto.spn.SubstitutionPermutationNetwork;
+import org.suai.crypto.util.BinaryString;
 import org.suai.crypto.util.LinearApproximation;
 
 import java.util.Arrays;
@@ -18,19 +19,20 @@ public class Main {
         }
 
         List<String> inputs = Arrays.asList(
-                "000010000",
                 "000110000",
-                "000000101",
-                "101000000",
-                "000000010",
-                "100000010",
-                "000111000",
-                "110000000"
+                "000010000",
+                "000000110",
+                "000000100",
+                "100000100",
+                "110000000",
+                "111000000",
+                "000111000"
         );
 
         List<LinearApproximation> approximations = getSPNApproximations(table, inputs);
 
-        String key = "101000111";
+        String key = "110001110";
+        System.out.println("Key: " + key);
         int numberOfPairs = 100;
         Map<String, String> pairs = generateCiphertextAndPlaintext(numberOfPairs, key);
         List<LinearApproximation> keyEquations = getKeyEquations(approximations, pairs);

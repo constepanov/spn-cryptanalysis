@@ -57,6 +57,9 @@ public class LinearCryptAnalyzer {
         for (int i = 0; i < count; i++) {
             String plaintext = BinaryString.random(BLOCK_SIZE);
             String ciphertext = spn.encrypt(plaintext, key);
+            if (i < 5) {
+                System.out.println(plaintext + " : " + ciphertext);
+            }
             pairs.put(plaintext, ciphertext);
         }
         return pairs;
@@ -96,7 +99,7 @@ public class LinearCryptAnalyzer {
             keyEquation.setLeftPart(approximation.getRightPart());
             EquationElement rightElement = new EquationElement(rightPartDecision == 1 ? ONE : ZERO);
             keyEquation.addToRight(rightElement);
-            keyEquation.setProbability(Fraction.ONE);
+            keyEquation.setProbability(approximation.getProbability());
             keyEquations.add(keyEquation);
         }
         return keyEquations;
