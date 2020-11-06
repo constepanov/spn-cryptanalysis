@@ -32,6 +32,10 @@ public class LinearApproximation {
         leftPart.add(element);
     }
 
+    public void addToRight(EquationElement element) {
+        rightPart.add(element);
+    }
+
     public LinearApproximation moveToLeft(EquationElement element) {
         List<EquationElement> left = Collections.singletonList(element);
         List<EquationElement> right = new ArrayList<>(leftPart);

@@ -14,6 +14,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+import static java.lang.Character.*;
 import static org.suai.crypto.spn.SPNConstants.*;
 import static org.suai.crypto.util.EquationElementType.*;
 
@@ -61,7 +62,55 @@ public class LinearCryptAnalyzer {
         return pairs;
     }
 
-    public static LinearApproximation buildSPNApproximation(int[][] table, String inputBlock) {
+    public static double getApproximationLeftPartStats(LinearApproximation approximation, Map<String, String> pairs) {
+        int leftPartEqualsOneCount = 0;
+        for (Map.Entry<String, String> entry : pairs.entrySet()) {
+            String plaintext = entry.getKey();
+            String ciphertext = entry.getValue();
+            int result = 0;
+            for (EquationElement element : approximation.getLeftPart()) {
+                int bitIndex = element.getBitNumber() - 1;
+                result ^= element.getType() == CIPHERTEXT ? getNumericValue(ciphertext.charAt(bitIndex))
+                        : getNumericValue(plaintext.charAt(bitIndex));
+            }
+            if (result == 1) {
+                leftPartEqualsOneCount++;
+            }
+        }
+        return (double) leftPartEqualsOneCount / pairs.size();
+    }
+
+    private static int getRightPartDecision(LinearApproximation approximation, int leftPartDecision) {
+        return approximation.getProbability()
+                .compareTo(Fraction.ONE_HALF) > 0 ? leftPartDecision : leftPartDecision ^ 1;
+    }
+
+    public static List<LinearApproximation> getKeyEquations(List<LinearApproximation> approximations,
+                                                            Map<String, String> pairs) {
+        List<LinearApproximation> keyEquations = new ArrayList<>();
+        for (LinearApproximation approximation : approximations) {
+            double leftPartStats = getApproximationLeftPartStats(approximation, pairs);
+            int leftPartDecision = leftPartStats > 0.5 ? 1 : 0;
+            int rightPartDecision = getRightPartDecision(approximation, leftPartDecision);
+            LinearApproximation keyEquation = new LinearApproximation();
+            keyEquation.setLeftPart(approximation.getRightPart());
+            EquationElement rightElement = new EquationElement(rightPartDecision == 1 ? ONE : ZERO);
+            keyEquation.addToRight(rightElement);
+            keyEquation.setProbability(Fraction.ONE);
+            keyEquations.add(keyEquation);
+        }
+        return keyEquations;
+    }
+
+    public static List<LinearApproximation> getSPNApproximations(int[][] table, List<String> inputBlocks) {
+        List<LinearApproximation> result = new ArrayList<>();
+        for (String inputBlock : inputBlocks) {
+            result.add(getSPNApproximation(table, inputBlock));
+        }
+        return result;
+    }
+
+    public static LinearApproximation getSPNApproximation(int[][] table, String inputBlock) {
         Map<Integer, List<LinearApproximation>> approximations = new LinkedHashMap<>();
 
         List<String> firstRoundInputs = getRoundInputs(inputBlock);

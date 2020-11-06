@@ -7,6 +7,10 @@ public class EquationElement {
     private int bitNumber;
     private EquationElementType type;
 
+    public EquationElement(EquationElementType type) {
+        this.type = type;
+    }
+
     public EquationElement(int bitNumber, EquationElementType type) {
         this.bitNumber = bitNumber;
         this.type = type;
@@ -22,6 +26,8 @@ public class EquationElement {
     public String toString() {
         if (type == EquationElementType.S_BOX_INPUT || type == EquationElementType.S_BOX_OUTPUT) {
             return String.format("%s(%d, %d)", type.getName(), roundNumber, bitNumber);
+        } else if (type == EquationElementType.ZERO || type == EquationElementType.ONE) {
+            return type.getName();
         } else {
             return String.format("%s(%d)", type.getName(), bitNumber);
         }
