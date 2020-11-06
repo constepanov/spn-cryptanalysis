@@ -15,19 +15,26 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import static java.lang.Character.*;
-import static org.suai.crypto.spn.SPNConstants.*;
 import static org.suai.crypto.util.EquationElementType.*;
 
 public class LinearCryptAnalyzer {
 
-    public static int[][] buildApproximationTable(BidiMap<String, String> sBox) {
-        int tableSize = (int) (Math.pow(2, S_BOX_INPUT_SIZE) - 1);
+    private SubstitutionPermutationNetwork spn;
+
+    public LinearCryptAnalyzer(SubstitutionPermutationNetwork spn) {
+        this.spn = spn;
+    }
+
+    public int[][] buildApproximationTable() {
+        BidiMap<String, String> sBox = spn.getSBox();
+        int sBoxInputSize = spn.getSBoxInputSize();
+        int tableSize = (int) (Math.pow(2, sBoxInputSize) - 1);
         int[][] table = new int[tableSize][tableSize];
         for (int i = 0; i < tableSize; i++) {
             for (int j = 0; j < tableSize; j++) {
                 int numberOfMatches = 0;
-                String inputMask = BinaryString.valueOf(i + 1, S_BOX_INPUT_SIZE);
-                String outputMask = BinaryString.valueOf(j + 1, S_BOX_INPUT_SIZE);
+                String inputMask = BinaryString.valueOf(i + 1, sBoxInputSize);
+                String outputMask = BinaryString.valueOf(j + 1, sBoxInputSize);
                 for (Map.Entry<String, String> entry : sBox.entrySet()) {
                     String sBoxInput = entry.getKey();
                     String sBoxOutput = entry.getValue();
@@ -45,17 +52,17 @@ public class LinearCryptAnalyzer {
         return table;
     }
 
-    private static int getCombinationResult(String mask, String value) {
+    private int getCombinationResult(String mask, String value) {
         return IntStream.range(0, mask.length())
                 .map(i -> (int) mask.charAt(i) & (int) value.charAt(i))
                 .reduce(0, (a, b) -> a ^ b);
     }
 
-    public static Map<String, String> generateCiphertextAndPlaintext(int count, String key) {
+    public Map<String, String> generateCiphertextAndPlaintext(int count, String key) {
         Map<String, String> pairs = new HashMap<>();
-        SubstitutionPermutationNetwork spn = new SubstitutionPermutationNetwork();
+        int blockSize = spn.getBlockSize();
         for (int i = 0; i < count; i++) {
-            String plaintext = BinaryString.random(BLOCK_SIZE);
+            String plaintext = BinaryString.random(blockSize);
             String ciphertext = spn.encrypt(plaintext, key);
             if (i < 5) {
                 System.out.println(plaintext + " : " + ciphertext);
@@ -65,7 +72,7 @@ public class LinearCryptAnalyzer {
         return pairs;
     }
 
-    public static double getApproximationLeftPartStats(LinearApproximation approximation, Map<String, String> pairs) {
+    public double getApproximationLeftPartStats(LinearApproximation approximation, Map<String, String> pairs) {
         int leftPartEqualsOneCount = 0;
         for (Map.Entry<String, String> entry : pairs.entrySet()) {
             String plaintext = entry.getKey();
@@ -83,12 +90,12 @@ public class LinearCryptAnalyzer {
         return (double) leftPartEqualsOneCount / pairs.size();
     }
 
-    private static int getRightPartDecision(LinearApproximation approximation, int leftPartDecision) {
+    private int getRightPartDecision(LinearApproximation approximation, int leftPartDecision) {
         return approximation.getProbability()
                 .compareTo(Fraction.ONE_HALF) > 0 ? leftPartDecision : leftPartDecision ^ 1;
     }
 
-    public static List<LinearApproximation> getKeyEquations(List<LinearApproximation> approximations,
+    public List<LinearApproximation> getKeyEquations(List<LinearApproximation> approximations,
                                                             Map<String, String> pairs) {
         List<LinearApproximation> keyEquations = new ArrayList<>();
         for (LinearApproximation approximation : approximations) {
@@ -105,7 +112,7 @@ public class LinearCryptAnalyzer {
         return keyEquations;
     }
 
-    public static List<LinearApproximation> getSPNApproximations(int[][] table, List<String> inputBlocks) {
+    public List<LinearApproximation> getSPNApproximations(int[][] table, List<String> inputBlocks) {
         List<LinearApproximation> result = new ArrayList<>();
         for (String inputBlock : inputBlocks) {
             result.add(getSPNApproximation(table, inputBlock));
@@ -113,10 +120,11 @@ public class LinearCryptAnalyzer {
         return result;
     }
 
-    public static LinearApproximation getSPNApproximation(int[][] table, String inputBlock) {
+    public LinearApproximation getSPNApproximation(int[][] table, String inputBlock) {
         Map<Integer, List<LinearApproximation>> approximations = new LinkedHashMap<>();
 
-        List<String> firstRoundInputs = getRoundInputs(inputBlock);
+        int sBoxInputSize = spn.getSBoxInputSize();
+        List<String> firstRoundInputs = getRoundInputs(inputBlock, sBoxInputSize);
         List<String> roundOutputs = new ArrayList<>();
         List<LinearApproximation> firstRoundApproximations = getRoundApproximations(table,
                 1,
@@ -127,10 +135,13 @@ public class LinearCryptAnalyzer {
         System.out.println(firstRoundApproximations);
         approximations.put(1, firstRoundApproximations);
 
-        for (int i = 1; i < NUMBER_OF_ROUNDS; i++) {
+        int numberOfRounds = spn.getNumberOfRounds();
+        int[] bitPermutation = spn.getBitPermutation();
+
+        for (int i = 1; i < numberOfRounds; i++) {
             int roundNumber = i + 1;
-            String roundBlock = BinaryString.permute(String.join("", roundOutputs), BIT_PERMUTATION);
-            List<String> roundInputs = getRoundInputs(roundBlock);
+            String roundBlock = BinaryString.permute(String.join("", roundOutputs), bitPermutation);
+            List<String> roundInputs = getRoundInputs(roundBlock, sBoxInputSize);
             roundOutputs.clear();
             List<LinearApproximation> roundApproximations = getRoundApproximations(table,
                     roundNumber,
@@ -139,7 +150,7 @@ public class LinearCryptAnalyzer {
             System.out.println(roundApproximations);
             simplifyRightPartInRoundApproximations(roundApproximations);
             System.out.println(roundApproximations);
-            if (i == NUMBER_OF_ROUNDS - 1) {
+            if (i == numberOfRounds - 1) {
                 simplifyLeftPartInLastRoundApproximations(roundApproximations);
                 System.out.println(roundApproximations);
             }
@@ -159,8 +170,8 @@ public class LinearCryptAnalyzer {
         List<LinearApproximation> usedApproximations = new ArrayList<>();
         usedApproximations.add(resultApproximation);
 
-        int leftIterations = NUMBER_OF_ROUNDS - resultApproximationRoundNumber;
-        int rightIterations = NUMBER_OF_ROUNDS - leftIterations - 1;
+        int leftIterations = numberOfRounds - resultApproximationRoundNumber;
+        int rightIterations = numberOfRounds - leftIterations - 1;
 
         for (int i = 0; i < leftIterations; i++) {
             List<EquationElement> updatedLeftPart = new ArrayList<>();
@@ -231,37 +242,38 @@ public class LinearCryptAnalyzer {
         return resultApproximation;
     }
 
-    private static List<String> getRoundInputs(String block) {
+    private List<String> getRoundInputs(String block, int length) {
         return IterableUtils.toList(Splitter
-                .fixedLength(S_BOX_INPUT_SIZE)
+                .fixedLength(length)
                 .split(block));
     }
 
-    private static List<LinearApproximation> getRoundApproximations(int[][] table,
+    private List<LinearApproximation> getRoundApproximations(int[][] table,
                                                                     int roundNumber,
                                                                     List<String> roundInputs,
                                                                     List<String> roundOutputs) {
-        int maxNumberOfMatches = (int) Math.pow(2, S_BOX_INPUT_SIZE);
+        int sBoxInputSize = spn.getSBoxInputSize();
+        int maxNumberOfMatches = (int) Math.pow(2, sBoxInputSize);
         List<LinearApproximation> roundApproximations = new ArrayList<>();
         for (int i = 0; i < roundInputs.size(); i++) {
             String roundInput = roundInputs.get(i);
             if (!BinaryString.isZero(roundInput)) {
                 int row = Integer.parseInt(roundInput, 2) - 1;
                 int column = getTableColumn(table, row);
-                String sBoxOutput = BinaryString.valueOf(column + 1, S_BOX_INPUT_SIZE);
+                String sBoxOutput = BinaryString.valueOf(column + 1, sBoxInputSize);
                 roundOutputs.add(sBoxOutput);
                 List<EquationElement> leftPart = getApproximationPart(roundNumber, i, sBoxOutput, S_BOX_OUTPUT);
                 List<EquationElement> rightPart = getApproximationPart(roundNumber, i, roundInput, S_BOX_INPUT);
                 Fraction probability = new Fraction(table[row][column], maxNumberOfMatches);
                 roundApproximations.add(new LinearApproximation(leftPart, rightPart, probability));
             } else {
-                roundOutputs.add(BinaryString.valueOf(0, S_BOX_INPUT_SIZE));
+                roundOutputs.add(BinaryString.valueOf(0, sBoxInputSize));
             }
         }
         return roundApproximations;
     }
 
-    private static void simplifyRightPartInFirstRoundApproximations(List<LinearApproximation> firstRoundApproximations) {
+    private void simplifyRightPartInFirstRoundApproximations(List<LinearApproximation> firstRoundApproximations) {
         for (LinearApproximation approximation : firstRoundApproximations) {
             List<EquationElement> rightPart = approximation.getRightPart();
             List<EquationElement> updatedRightPart = new ArrayList<>();
@@ -273,12 +285,13 @@ public class LinearCryptAnalyzer {
         }
     }
 
-    private static void simplifyRightPartInRoundApproximations(List<LinearApproximation> roundApproximations) {
+    private void simplifyRightPartInRoundApproximations(List<LinearApproximation> roundApproximations) {
+        int[] bitPermutation = spn.getBitPermutation();
         for (LinearApproximation approximation : roundApproximations) {
             List<EquationElement> rightPart = approximation.getRightPart();
             List<EquationElement> updatedRightPart = new ArrayList<>();
             for (EquationElement element : rightPart) {
-                int bitNumber = BIT_PERMUTATION[element.getBitNumber() - 1] + 1;
+                int bitNumber = bitPermutation[element.getBitNumber() - 1] + 1;
                 int roundNumber = element.getRoundNumber() - 1;
                 updatedRightPart.add(new EquationElement(roundNumber, bitNumber, S_BOX_OUTPUT));
                 updatedRightPart.add(new EquationElement(element.getBitNumber(), KEY));
@@ -287,7 +300,7 @@ public class LinearCryptAnalyzer {
         }
     }
 
-    private static void simplifyLeftPartInLastRoundApproximations(List<LinearApproximation> roundApproximations) {
+    private void simplifyLeftPartInLastRoundApproximations(List<LinearApproximation> roundApproximations) {
         for (LinearApproximation approximation : roundApproximations) {
             List<EquationElement> leftPart = approximation.getLeftPart();
             List<EquationElement> updatedLeftPart = new ArrayList<>();
@@ -299,15 +312,17 @@ public class LinearCryptAnalyzer {
         }
     }
 
-    private static List<EquationElement> getApproximationPart(int roundNumber, int sBoxIndex, String value, EquationElementType type) {
+    private List<EquationElement> getApproximationPart(int roundNumber,
+                                                       int sBoxIndex, String value,
+                                                       EquationElementType type) {
         return IntStream.range(0, value.length())
                 .filter(i -> value.charAt(i) != '0')
-                .map(i -> sBoxIndex * S_BOX_INPUT_SIZE + i + 1)
+                .map(i -> sBoxIndex * spn.getSBoxInputSize() + i + 1)
                 .mapToObj(bitNumber -> new EquationElement(roundNumber, bitNumber, type))
                 .collect(Collectors.toList());
     }
 
-    private static Fraction getSPNApproximationProbability(Map<Integer, List<LinearApproximation>> approximations) {
+    private Fraction getSPNApproximationProbability(Map<Integer, List<LinearApproximation>> approximations) {
         // Piling-Up Lemma
         int n = approximations.values().stream().mapToInt(List::size).sum();
         Fraction probability = new Fraction(Math.pow(2, n - 1));
@@ -320,7 +335,7 @@ public class LinearCryptAnalyzer {
         return Fraction.ONE_HALF.add(probability);
     }
 
-    public static int getTableColumn(int[][] table, int row) {
+    public int getTableColumn(int[][] table, int row) {
         // Should this function return min or max?
         int minIndex = indexOfMin(table[row]);
         if (table[row][minIndex] == 0) {
@@ -333,7 +348,7 @@ public class LinearCryptAnalyzer {
         return minIndex;
     }
 
-    private static int indexOfMin(int[] array) {
+    private int indexOfMin(int[] array) {
         int index = 0;
         int min = array[index];
         for (int i = 1; i < array.length; i++){
@@ -345,7 +360,7 @@ public class LinearCryptAnalyzer {
         return index;
     }
 
-    private static int indexOfMax(int[] array) {
+    private int indexOfMax(int[] array) {
         int index = 0;
         int max = array[index];
         for (int i = 1; i < array.length; i++) {

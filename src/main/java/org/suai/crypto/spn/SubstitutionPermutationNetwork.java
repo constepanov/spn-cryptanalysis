@@ -5,11 +5,12 @@ import org.apache.commons.collections4.BidiMap;
 import org.apache.commons.collections4.bidimap.DualHashBidiMap;
 import org.suai.crypto.util.BinaryString;
 
-import static org.suai.crypto.spn.SPNConstants.BIT_PERMUTATION;
-import static org.suai.crypto.spn.SPNConstants.S_BOX_INPUT_SIZE;
-
 public class SubstitutionPermutationNetwork {
 
+    private final int BLOCK_SIZE = 9;
+    private final int NUMBER_OF_ROUNDS = 3;
+    private final int S_BOX_INPUT_SIZE = 3;
+    private final int[] BIT_PERMUTATION = {0, 3, 6, 1, 4, 7, 2, 5, 8};
     private final BidiMap<String, String> sBox;
 
     public SubstitutionPermutationNetwork() {
@@ -53,8 +54,6 @@ public class SubstitutionPermutationNetwork {
         sBox.put("111", "101");
 
          */
-
-
 
         sBox.put("000", "111");
         sBox.put("001", "110");
@@ -115,5 +114,21 @@ public class SubstitutionPermutationNetwork {
 
     public BidiMap<String, String> getSBox() {
         return sBox;
+    }
+
+    public int getBlockSize() {
+        return BLOCK_SIZE;
+    }
+
+    public int getNumberOfRounds() {
+        return NUMBER_OF_ROUNDS;
+    }
+
+    public int getSBoxInputSize() {
+        return S_BOX_INPUT_SIZE;
+    }
+
+    public int[] getBitPermutation() {
+        return BIT_PERMUTATION;
     }
 }
