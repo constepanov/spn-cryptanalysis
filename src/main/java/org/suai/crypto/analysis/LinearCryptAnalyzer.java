@@ -4,7 +4,8 @@ import com.google.common.base.Splitter;
 import org.apache.commons.collections4.BidiMap;
 import org.apache.commons.collections4.IterableUtils;
 import org.apache.commons.math3.fraction.Fraction;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.suai.crypto.spn.SubstitutionPermutationNetwork;
 import org.suai.crypto.util.BinaryString;
 import org.suai.crypto.util.EquationElement;
@@ -15,12 +16,12 @@ import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import static java.lang.Character.*;
+import static java.lang.Character.getNumericValue;
 import static org.suai.crypto.util.EquationElementType.*;
 
 public class LinearCryptAnalyzer {
 
-    private static final Logger log = Logger.getLogger(LinearCryptAnalyzer.class);
+    private static final Logger logger = LoggerFactory.getLogger(LinearCryptAnalyzer.class);
 
     private final SubstitutionPermutationNetwork spn;
 
@@ -67,9 +68,6 @@ public class LinearCryptAnalyzer {
         for (int i = 0; i < count; i++) {
             String plaintext = BinaryString.random(blockSize);
             String ciphertext = spn.encrypt(plaintext, key);
-            if (i < 5) {
-                log.debug(plaintext + " : " + ciphertext);
-            }
             pairs.put(plaintext, ciphertext);
         }
         return pairs;
@@ -133,9 +131,9 @@ public class LinearCryptAnalyzer {
                 1,
                 firstRoundInputs,
                 roundOutputs);
-        log.debug(firstRoundApproximations);
+        logger.debug(firstRoundApproximations.toString());
         simplifyRightPartInFirstRoundApproximations(firstRoundApproximations);
-        log.debug(firstRoundApproximations);
+        logger.debug(firstRoundApproximations.toString());
         approximations.put(1, firstRoundApproximations);
 
         int numberOfRounds = spn.getNumberOfRounds();
@@ -150,12 +148,12 @@ public class LinearCryptAnalyzer {
                     roundNumber,
                     roundInputs,
                     roundOutputs);
-            log.debug(roundApproximations);
+            logger.debug(roundApproximations.toString());
             simplifyRightPartInRoundApproximations(roundApproximations);
-            log.debug(roundApproximations);
+            logger.debug(roundApproximations.toString());
             if (i == numberOfRounds - 1) {
                 simplifyLeftPartInLastRoundApproximations(roundApproximations);
-                log.debug(roundApproximations);
+                logger.debug(roundApproximations.toString());
             }
             approximations.put(roundNumber, roundApproximations);
         }
@@ -202,7 +200,7 @@ public class LinearCryptAnalyzer {
                     .filter(element -> !replacedElements.contains(element))
                     .forEach(updatedLeftPart::add);
             resultApproximation.setLeftPart(updatedLeftPart);
-            log.debug(resultApproximation);
+            logger.debug(resultApproximation.toString());
         }
 
         for (int i = 0; i < rightIterations; i++) {
@@ -231,16 +229,16 @@ public class LinearCryptAnalyzer {
                     .filter(element -> !replacedElements.contains(element))
                     .forEach(updatedRightPart::add);
             resultApproximation.setRightPart(updatedRightPart);
-            log.debug(resultApproximation);
+            logger.debug(resultApproximation.toString());
         }
 
         resultApproximation.simplify();
-        log.debug("Simplified: " + resultApproximation);
+        logger.debug("Simplified: " + resultApproximation);
         resultApproximation.toStandardForm();
 
         Fraction resultProbability = getSPNApproximationProbability(approximations);
         resultApproximation.setProbability(resultProbability);
-        log.debug("Final approximation: " + resultApproximation);
+        logger.debug("Final approximation: " + resultApproximation);
 
         return resultApproximation;
     }
