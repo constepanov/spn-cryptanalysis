@@ -116,6 +116,7 @@ public class LinearCryptAnalyzer {
     public List<LinearApproximation> getSPNApproximations(int[][] table, List<String> inputBlocks) {
         List<LinearApproximation> result = new ArrayList<>();
         for (String inputBlock : inputBlocks) {
+            logger.debug("Creating linear approximation. Input: {}", inputBlock);
             result.add(getSPNApproximation(table, inputBlock));
         }
         return result;
@@ -127,12 +128,15 @@ public class LinearCryptAnalyzer {
         int sBoxInputSize = spn.getSBoxInputSize();
         List<String> firstRoundInputs = getRoundInputs(inputBlock, sBoxInputSize);
         List<String> roundOutputs = new ArrayList<>();
-        List<LinearApproximation> firstRoundApproximations = getRoundApproximations(table,
+        List<LinearApproximation> firstRoundApproximations = getRoundApproximations(
+                table,
                 1,
                 firstRoundInputs,
                 roundOutputs);
+        logger.debug("Round 1 approximations");
         logger.debug(firstRoundApproximations.toString());
         simplifyRightPartInFirstRoundApproximations(firstRoundApproximations);
+        logger.debug("Round 1 approximations (simplified)");
         logger.debug(firstRoundApproximations.toString());
         approximations.put(1, firstRoundApproximations);
 
@@ -144,12 +148,15 @@ public class LinearCryptAnalyzer {
             String roundBlock = BinaryString.permute(String.join("", roundOutputs), bitPermutation);
             List<String> roundInputs = getRoundInputs(roundBlock, sBoxInputSize);
             roundOutputs.clear();
-            List<LinearApproximation> roundApproximations = getRoundApproximations(table,
+            List<LinearApproximation> roundApproximations = getRoundApproximations(
+                    table,
                     roundNumber,
                     roundInputs,
                     roundOutputs);
+            logger.debug("Round {} approximations", roundNumber);
             logger.debug(roundApproximations.toString());
             simplifyRightPartInRoundApproximations(roundApproximations);
+            logger.debug("Round {} approximations (simplified)", roundNumber);
             logger.debug(roundApproximations.toString());
             if (i == numberOfRounds - 1) {
                 simplifyLeftPartInLastRoundApproximations(roundApproximations);
@@ -200,7 +207,6 @@ public class LinearCryptAnalyzer {
                     .filter(element -> !replacedElements.contains(element))
                     .forEach(updatedLeftPart::add);
             resultApproximation.setLeftPart(updatedLeftPart);
-            logger.debug(resultApproximation.toString());
         }
 
         for (int i = 0; i < rightIterations; i++) {
@@ -229,16 +235,16 @@ public class LinearCryptAnalyzer {
                     .filter(element -> !replacedElements.contains(element))
                     .forEach(updatedRightPart::add);
             resultApproximation.setRightPart(updatedRightPart);
-            logger.debug(resultApproximation.toString());
         }
 
         resultApproximation.simplify();
-        logger.debug("Simplified: " + resultApproximation);
+        logger.debug("Result approximation (simplified): {}", resultApproximation);
         resultApproximation.toStandardForm();
 
+        logger.debug("Calculation result approximation probability by Piling-Up Lemma...");
         Fraction resultProbability = getSPNApproximationProbability(approximations);
         resultApproximation.setProbability(resultProbability);
-        logger.debug("Final approximation: " + resultApproximation);
+        logger.debug("Result approximation (standard form): {}", resultApproximation);
 
         return resultApproximation;
     }
@@ -352,7 +358,7 @@ public class LinearCryptAnalyzer {
     private int indexOfMin(int[] array) {
         int index = 0;
         int min = array[index];
-        for (int i = 1; i < array.length; i++){
+        for (int i = 1; i < array.length; i++) {
             if (array[i] < min) {
                 min = array[i];
                 index = i;

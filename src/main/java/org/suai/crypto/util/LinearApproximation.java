@@ -18,8 +18,7 @@ public class LinearApproximation {
     }
 
     public LinearApproximation(List<EquationElement> leftPart, List<EquationElement> rightPart) {
-        this.leftPart = leftPart;
-        this.rightPart = rightPart;
+        this(leftPart, rightPart, Fraction.ONE);
     }
 
     public LinearApproximation(List<EquationElement> leftPart, List<EquationElement> rightPart, Fraction probability) {

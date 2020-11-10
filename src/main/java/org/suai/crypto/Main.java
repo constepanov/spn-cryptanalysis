@@ -35,14 +35,13 @@ public class Main {
 
         List<LinearApproximation> approximations = analyzer.getSPNApproximations(table, inputs);
 
-        String key = "110001110";
+        String key = "110101001";
         logger.info("Key: " + key);
         int numberOfPairs = 100;
         Map<String, String> pairs = analyzer.generateCiphertextAndPlaintext(numberOfPairs, key);
         logger.info("Plain and ciphertext sample pairs");
-        pairs.entrySet().stream().limit(5).forEach(entry -> {
-            logger.info("{} --- {}", entry.getKey(), entry.getValue());
-        });
+        pairs.entrySet().stream().limit(5).forEach(entry ->
+                logger.info("{} --- {}", entry.getKey(), entry.getValue()));
         List<LinearApproximation> keyEquations = analyzer.getKeyEquations(approximations, pairs);
         logger.info("Key equations");
         keyEquations.forEach(equation -> logger.info(equation.toString()));
