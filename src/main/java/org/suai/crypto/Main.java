@@ -1,6 +1,7 @@
 package org.suai.crypto;
 
 import org.apache.commons.collections4.BidiMap;
+import org.apache.commons.math3.util.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.suai.crypto.analysis.DifferentialCryptAnalyzer;
@@ -9,6 +10,7 @@ import org.suai.crypto.spn.SBoxProvider;
 import org.suai.crypto.spn.SubstitutionPermutationNetwork;
 import org.suai.crypto.util.LinearApproximation;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -29,7 +31,11 @@ public class Main {
         for (int[] row : table) {
             logger.info(Arrays.toString(row));
         }
-        System.out.println(analyzer.getLastRoundInputDifferences("000000111"));
+        String key = "110101001";
+        String inputDifference = "110000000";
+        Map<Pair<String, String>, Pair<String, String>> pairs = analyzer.generateCiphertextAndPlaintext(
+                5, key, inputDifference);
+        pairs.entrySet().forEach(System.out::println);
     }
 
     private static void linearCryptanalysis() {

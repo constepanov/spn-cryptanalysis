@@ -2,6 +2,7 @@ package org.suai.crypto.analysis;
 
 import com.google.common.base.Splitter;
 import org.apache.commons.collections4.BidiMap;
+import org.apache.commons.math3.util.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.suai.crypto.spn.SubstitutionPermutationNetwork;
@@ -89,10 +90,21 @@ public class DifferentialCryptAnalyzer {
         return sBoxInputDifference;
     }
 
-    public Map<String, String> generateCiphertextAndPlaintext(int count,
-                                                              String key,
-                                                              String inputDifferenceBlock) {
-        return null;
+    public Map<Pair<String, String>, Pair<String, String>> generateCiphertextAndPlaintext(
+            int num,
+            String key,
+            String inputDifferenceBlock) {
+        int blockSize = spn.getBlockSize();
+        Map<Pair<String, String>, Pair<String, String>> pairs = new HashMap<>();
+        while (pairs.size() <= num) {
+            String firstPlaintext = BinaryString.random(blockSize);
+            String secondPlaintext = BinaryString.xor(firstPlaintext, inputDifferenceBlock);
+            String firstCiphertext = spn.encrypt(firstPlaintext, key);
+            String secondCiphertext = spn.encrypt(secondPlaintext, key);
+            pairs.put(new Pair<>(firstPlaintext, firstCiphertext),
+                    new Pair<>(secondPlaintext, secondCiphertext));
+        }
+        return pairs;
     }
 
     private Map<Integer, List<String>> getPossibleSubKeys(String outputDifferenceBlock,
@@ -102,7 +114,6 @@ public class DifferentialCryptAnalyzer {
 
     private String getSBoxOutputDifference(String inputDifferenceBlock) {
         StringBuilder result = new StringBuilder();
-        BidiMap<String, String> sBox = spn.getSBox();
         for (String input : Splitter.fixedLength(spn.getSBoxInputSize()).split(inputDifferenceBlock)) {
             List<String> outputDiff = input.indexOf('x') == -1 ?
                     getOutputDifferences(input) : getUniqueOutputDifferences(input);
