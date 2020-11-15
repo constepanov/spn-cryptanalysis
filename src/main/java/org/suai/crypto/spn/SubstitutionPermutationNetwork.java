@@ -2,7 +2,6 @@ package org.suai.crypto.spn;
 
 import com.google.common.base.Splitter;
 import org.apache.commons.collections4.BidiMap;
-import org.apache.commons.collections4.bidimap.DualHashBidiMap;
 import org.suai.crypto.util.BinaryString;
 
 public class SubstitutionPermutationNetwork {
@@ -11,22 +10,11 @@ public class SubstitutionPermutationNetwork {
     private static final int NUMBER_OF_ROUNDS = 3;
     private static final int S_BOX_INPUT_SIZE = 3;
     private static final int[] BIT_PERMUTATION = {0, 3, 6, 1, 4, 7, 2, 5, 8};
-    private final BidiMap<String, String> sBox;
 
-    public SubstitutionPermutationNetwork() {
-        this.sBox = new DualHashBidiMap<>();
-        initSBox();
-    }
+    private BidiMap<String, String> sBox;
 
-    private void initSBox() {
-        sBox.put("000", "111");
-        sBox.put("001", "110");
-        sBox.put("010", "011");
-        sBox.put("011", "010");
-        sBox.put("100", "000");
-        sBox.put("101", "001");
-        sBox.put("110", "101");
-        sBox.put("111", "100");
+    public SubstitutionPermutationNetwork(BidiMap<String, String> sBox) {
+        this.sBox = sBox;
     }
 
     public String encrypt(String plaintext, String key) {
@@ -77,6 +65,10 @@ public class SubstitutionPermutationNetwork {
 
     public BidiMap<String, String> getSBox() {
         return sBox;
+    }
+
+    public void setSBox(BidiMap<String, String> sBox) {
+        this.sBox = sBox;
     }
 
     public int getBlockSize() {

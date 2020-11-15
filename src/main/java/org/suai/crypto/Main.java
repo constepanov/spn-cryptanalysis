@@ -1,8 +1,11 @@
 package org.suai.crypto;
 
+import org.apache.commons.collections4.BidiMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.suai.crypto.analysis.DifferentialCryptAnalyzer;
 import org.suai.crypto.analysis.LinearCryptAnalyzer;
+import org.suai.crypto.spn.SBoxProvider;
 import org.suai.crypto.spn.SubstitutionPermutationNetwork;
 import org.suai.crypto.util.LinearApproximation;
 
@@ -14,7 +17,24 @@ public class Main {
     private static final Logger logger = LoggerFactory.getLogger(Main.class);
 
     public static void main(String[] args) {
-        SubstitutionPermutationNetwork spn = new SubstitutionPermutationNetwork();
+        diffCryptanalysis();
+    }
+
+    private static void diffCryptanalysis() {
+        BidiMap<String, String> sBox = SBoxProvider.getForDiffAnalysis();
+        SubstitutionPermutationNetwork spn = new SubstitutionPermutationNetwork(sBox);
+        DifferentialCryptAnalyzer analyzer = new DifferentialCryptAnalyzer(spn);
+        int[][] table = analyzer.getDifferenceDistributionTable();
+        logger.info("Difference distribution table");
+        for (int[] row : table) {
+            logger.info(Arrays.toString(row));
+        }
+        System.out.println(analyzer.getLastRoundInputDifferences("000000111"));
+    }
+
+    private static void linearCryptanalysis() {
+        BidiMap<String, String> sBox = SBoxProvider.getForLinearAnalysis();
+        SubstitutionPermutationNetwork spn = new SubstitutionPermutationNetwork(sBox);
         LinearCryptAnalyzer analyzer = new LinearCryptAnalyzer(spn);
         int[][] table = analyzer.buildApproximationTable();
         logger.info("Linear approximation table");
