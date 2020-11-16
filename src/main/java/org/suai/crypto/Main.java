@@ -10,10 +10,7 @@ import org.suai.crypto.spn.SBoxProvider;
 import org.suai.crypto.spn.SubstitutionPermutationNetwork;
 import org.suai.crypto.util.LinearApproximation;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class Main {
     private static final Logger logger = LoggerFactory.getLogger(Main.class);
@@ -31,11 +28,11 @@ public class Main {
         for (int[] row : table) {
             logger.info(Arrays.toString(row));
         }
-        String key = "110101001";
-        String inputDifference = "110000000";
-        Map<Pair<String, String>, Pair<String, String>> pairs = analyzer.generateCiphertextAndPlaintext(
-                5, key, inputDifference);
-        pairs.entrySet().forEach(System.out::println);
+        String key = "010010101";
+        List<String> inputDifference = Arrays.asList("000110000", "000000110", "000101000", "000000101");
+        int num = 5;
+        Map<Integer, Set<String>> subKeys = analyzer.analyzeInputDifferences(inputDifference, num, key);
+        System.out.println(subKeys);
     }
 
     private static void linearCryptanalysis() {

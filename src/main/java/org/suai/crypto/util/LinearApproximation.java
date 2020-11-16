@@ -21,7 +21,9 @@ public class LinearApproximation {
         this(leftPart, rightPart, Fraction.ONE);
     }
 
-    public LinearApproximation(List<EquationElement> leftPart, List<EquationElement> rightPart, Fraction probability) {
+    public LinearApproximation(List<EquationElement> leftPart,
+                               List<EquationElement> rightPart,
+                               Fraction probability) {
         this.leftPart = leftPart;
         this.rightPart = rightPart;
         this.probability = probability;

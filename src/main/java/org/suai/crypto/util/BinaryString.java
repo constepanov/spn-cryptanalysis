@@ -1,8 +1,11 @@
 package org.suai.crypto.util;
 
+import com.google.common.base.Splitter;
 import com.google.common.base.Strings;
+import org.apache.commons.collections4.IterableUtils;
 
 import java.security.SecureRandom;
+import java.util.List;
 import java.util.function.IntFunction;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -45,5 +48,11 @@ public class BinaryString {
         return IntStream.range(0, length)
                 .mapToObj(i -> String.valueOf(Math.abs(random.nextInt() % 2)))
                 .collect(Collectors.joining());
+    }
+
+    public static List<String> split(String block, int length) {
+        return IterableUtils.toList(Splitter
+                .fixedLength(length)
+                .split(block));
     }
 }
