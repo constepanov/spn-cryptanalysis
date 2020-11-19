@@ -6,6 +6,7 @@ import org.apache.commons.math3.util.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.suai.crypto.spn.SubstitutionPermutationNetwork;
+import org.suai.crypto.util.TextPair;
 
 import java.util.*;
 import java.util.function.IntPredicate;
@@ -91,19 +92,21 @@ public class DifferentialCryptAnalyzer {
         return sBoxInputDifference;
     }
 
-    public List<Pair<Pair<String, String>, Pair<String, String>>> generateCiphertextAndPlaintext(
+    public List<TextPair> generateCiphertextAndPlaintext(
             int num,
             String key,
             String inputDifferenceBlock) {
         int blockSize = spn.getBlockSize();
-        List<Pair<Pair<String, String>, Pair<String, String>>> pairs = new ArrayList<>();
+        List<TextPair> pairs = new ArrayList<>();
         while (pairs.size() < num) {
             String firstPlaintext = random(blockSize);
             String secondPlaintext = xor(firstPlaintext, inputDifferenceBlock);
             String firstCiphertext = spn.encrypt(firstPlaintext, key);
             String secondCiphertext = spn.encrypt(secondPlaintext, key);
-            pairs.add(new Pair<>(new Pair<>(firstPlaintext, secondPlaintext),
-                    new Pair<>(firstCiphertext, secondCiphertext)));
+            TextPair textPair = new TextPair();
+            textPair.setPlaintextPair(new Pair<>(firstPlaintext, secondPlaintext));
+            textPair.setCiphertextPair(new Pair<>(firstCiphertext, secondCiphertext));
+            pairs.add(textPair);
         }
         return pairs;
     }
@@ -114,11 +117,10 @@ public class DifferentialCryptAnalyzer {
         Map<Integer, Set<String>> subKeys = new HashMap<>();
         inputDifferences.forEach(inputDiff -> {
             String lastRoundInputDiff = getLastRoundInputDifferences(inputDiff);
-            List<Pair<Pair<String, String>, Pair<String, String>>> pairs =
-                    generateCiphertextAndPlaintext(numberOfPairs, key, inputDiff);
+            List<TextPair> pairs = generateCiphertextAndPlaintext(numberOfPairs, key, inputDiff);
             pairs.forEach(p -> logger.debug("{}", p));
             pairs.forEach(p ->
-                    updateSubKeys(subKeys, getSubKeys(lastRoundInputDiff, p.getSecond())));
+                    updateSubKeys(subKeys, getSubKeys(lastRoundInputDiff, p.getCiphertextPair())));
         });
         return subKeys;
     }
