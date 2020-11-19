@@ -1,7 +1,6 @@
 package org.suai.crypto;
 
 import org.apache.commons.collections4.BidiMap;
-import org.apache.commons.math3.util.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.suai.crypto.analysis.DifferentialCryptAnalyzer;
@@ -10,17 +9,26 @@ import org.suai.crypto.spn.SBoxProvider;
 import org.suai.crypto.spn.SubstitutionPermutationNetwork;
 import org.suai.crypto.util.LinearApproximation;
 
-import java.util.*;
+import java.io.File;
+import java.io.IOException;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 public class Main {
     private static final Logger logger = LoggerFactory.getLogger(Main.class);
 
-    public static void main(String[] args) {
-        diffCryptanalysis();
+    public static void main(String[] args) throws IOException {
+        logger.debug("Linear cryptanalysis");
+        linearCryptanalysis();
+        logger.debug("Differential cryptanalysis");
+        differentialCryptanalysis();
     }
 
-    private static void diffCryptanalysis() {
-        BidiMap<String, String> sBox = SBoxProvider.getForDiffAnalysis();
+    private static void differentialCryptanalysis() throws IOException {
+        File file = new File("src/main/resources/sbox-7.txt");
+        BidiMap<String, String> sBox = SBoxProvider.readFromFile(file, 3);
         SubstitutionPermutationNetwork spn = new SubstitutionPermutationNetwork(sBox);
         DifferentialCryptAnalyzer analyzer = new DifferentialCryptAnalyzer(spn);
         int[][] table = analyzer.getDifferenceDistributionTable();
@@ -28,15 +36,16 @@ public class Main {
         for (int[] row : table) {
             logger.info(Arrays.toString(row));
         }
-        String key = "010010101";
+        String key = "010011101";
         List<String> inputDifference = Arrays.asList("000110000", "000000110", "000101000", "000000101");
         int num = 5;
         Map<Integer, Set<String>> subKeys = analyzer.analyzeInputDifferences(inputDifference, num, key);
         System.out.println(subKeys);
     }
 
-    private static void linearCryptanalysis() {
-        BidiMap<String, String> sBox = SBoxProvider.getForLinearAnalysis();
+    private static void linearCryptanalysis() throws IOException {
+        File file = new File("src/main/resources/sbox-9.txt");
+        BidiMap<String, String> sBox = SBoxProvider.readFromFile(file, 3);
         SubstitutionPermutationNetwork spn = new SubstitutionPermutationNetwork(sBox);
         LinearCryptAnalyzer analyzer = new LinearCryptAnalyzer(spn);
         int[][] table = analyzer.buildApproximationTable();

@@ -3,30 +3,22 @@ package org.suai.crypto.spn;
 import org.apache.commons.collections4.BidiMap;
 import org.apache.commons.collections4.bidimap.DualHashBidiMap;
 
-public class SBoxProvider {
-    public static BidiMap<String, String> getForDiffAnalysis() {
-        BidiMap<String, String> sBox = new DualHashBidiMap<>();
-        sBox.put("000", "110");
-        sBox.put("001", "000");
-        sBox.put("010", "101");
-        sBox.put("011", "001");
-        sBox.put("100", "111");
-        sBox.put("101", "011");
-        sBox.put("110", "100");
-        sBox.put("111", "010");
-        return sBox;
-    }
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.util.List;
 
-    public static BidiMap<String, String> getForLinearAnalysis() {
+import static org.suai.crypto.util.BinaryString.valueOf;
+
+public class SBoxProvider {
+    public static BidiMap<String, String> readFromFile(File file, int binaryLength) throws IOException {
+        List<String> lines = Files.readAllLines(file.toPath());
         BidiMap<String, String> sBox = new DualHashBidiMap<>();
-        sBox.put("000", "111");
-        sBox.put("001", "110");
-        sBox.put("010", "011");
-        sBox.put("011", "010");
-        sBox.put("100", "000");
-        sBox.put("101", "001");
-        sBox.put("110", "101");
-        sBox.put("111", "100");
+        lines.stream().map(line -> line.split(" ")).forEach(s -> {
+            int input = Integer.parseInt(s[0]);
+            int output = Integer.parseInt(s[1]);
+            sBox.put(valueOf(input, binaryLength), valueOf(output, binaryLength));
+        });
         return sBox;
     }
 }
