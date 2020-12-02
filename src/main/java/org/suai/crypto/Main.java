@@ -55,8 +55,8 @@ public class Main {
         }
 
         List<String> inputs = Arrays.asList(
-                "000110000",
                 "000010000",
+                "000110000",
                 "000000110",
                 "000000100",
                 "100000100",

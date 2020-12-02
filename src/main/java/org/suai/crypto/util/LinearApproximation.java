@@ -29,6 +29,12 @@ public class LinearApproximation {
         this.probability = probability;
     }
 
+    public LinearApproximation(LinearApproximation approximationForCombine) {
+        this(approximationForCombine.leftPart,
+                approximationForCombine.rightPart,
+                approximationForCombine.probability);
+    }
+
     public void addToLeft(EquationElement element) {
         leftPart.add(element);
     }
@@ -83,7 +89,7 @@ public class LinearApproximation {
         rightPart = updatedRightPart;
     }
 
-    private void moveAllToLeft() {
+    public void moveAllToLeft() {
         leftPart.addAll(rightPart);
         rightPart.clear();
     }
