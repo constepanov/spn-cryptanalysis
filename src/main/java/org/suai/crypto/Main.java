@@ -27,7 +27,9 @@ public class Main {
     }
 
     private static void differentialCryptanalysis() throws IOException {
-        File file = new File("src/main/resources/sbox-7.txt");
+        int taskNumber = 7;
+        String pathname = String.format("src/main/resources/diff/sbox-%d.txt", taskNumber);
+        File file = new File(pathname);
         BidiMap<String, String> sBox = SBoxProvider.readFromFile(file, 3);
         SubstitutionPermutationNetwork spn = new SubstitutionPermutationNetwork(sBox);
         DifferentialCryptAnalyzer analyzer = new DifferentialCryptAnalyzer(spn);
@@ -36,15 +38,28 @@ public class Main {
         for (int[] row : table) {
             logger.info(Arrays.toString(row));
         }
-        String key = "010011101";
+        String key = "101011001";
+        // Konstantin 7
         List<String> inputDifference = Arrays.asList("000110000", "000000110", "000101000", "000000101");
+
+        // Vika 1
+        //List<String> inputDifference = Arrays.asList("100000000", "000011000", "000000011");
+
+        // Alexey 2
+        //List<String> inputDifference = Arrays.asList("100000000", "000100000", "000011000");
+
+        // Ivan 3
+        //List<String> inputDifference = Arrays.asList("000101000", "000011000");
+
         int num = 5;
         Map<Integer, Set<String>> subKeys = analyzer.analyzeInputDifferences(inputDifference, num, key);
         System.out.println(subKeys);
     }
 
     private static void linearCryptanalysis() throws IOException {
-        File file = new File("src/main/resources/sbox-9.txt");
+        int taskNumber = 2;
+        String pathname = String.format("src/main/resources/linear/sbox-%d.txt", taskNumber);
+        File file = new File(pathname);
         BidiMap<String, String> sBox = SBoxProvider.readFromFile(file, 3);
         SubstitutionPermutationNetwork spn = new SubstitutionPermutationNetwork(sBox);
         LinearCryptAnalyzer analyzer = new LinearCryptAnalyzer(spn);
@@ -54,16 +69,8 @@ public class Main {
             logger.info(Arrays.toString(row));
         }
 
-        List<String> inputs = Arrays.asList(
-                "000010000",
-                "000110000",
-                "000000110",
-                "000000100",
-                "100000100",
-                "110000000",
-                "111000000",
-                "000111000"
-        );
+        List<String> inputs = analyzer.getInputs();
+        logger.info("Inputs: " + inputs);
 
         List<LinearApproximation> approximations = analyzer.getSPNApproximations(table, inputs);
 

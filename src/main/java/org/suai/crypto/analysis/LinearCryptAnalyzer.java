@@ -64,6 +64,25 @@ public class LinearCryptAnalyzer {
                 .reduce(0, (a, b) -> a ^ b);
     }
 
+    public List<String> getInputs() {
+        List<String> inputs = new ArrayList<>();
+        String zeroInput = BinaryString.valueOf(0, 9);
+        StringBuilder input = new StringBuilder(zeroInput);
+        int number = 0;
+        int size = 3 * (int) (Math.pow(2, spn.getSBoxInputSize()) - 1);
+        for (int i = 0; i < size; i++) {
+            if (i % 3 == 0) {
+                number++;
+            }
+            int start = (i % 3) * 3;
+            int end = start + 3;
+            input.replace(start, end, BinaryString.valueOf(number, 3));
+            inputs.add(input.toString());
+            input.replace(0, input.length(), zeroInput);
+        }
+        return inputs;
+    }
+
     public Map<String, String> generateCiphertextAndPlaintext(int count, String key) {
         Map<String, String> pairs = new HashMap<>();
         int blockSize = spn.getBlockSize();
