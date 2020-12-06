@@ -15,6 +15,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.IntStream;
 
 public class Main {
     private static final Logger logger = LoggerFactory.getLogger(Main.class);
@@ -22,8 +23,8 @@ public class Main {
     public static void main(String[] args) throws IOException {
         logger.debug("Linear cryptanalysis");
         linearCryptanalysis();
-        logger.debug("Differential cryptanalysis");
-        differentialCryptanalysis();
+        //logger.debug("Differential cryptanalysis");
+        //differentialCryptanalysis();
     }
 
     private static void differentialCryptanalysis() throws IOException {
@@ -57,7 +58,7 @@ public class Main {
     }
 
     private static void linearCryptanalysis() throws IOException {
-        int taskNumber = 2;
+        int taskNumber = 4;
         String pathname = String.format("src/main/resources/linear/sbox-%d.txt", taskNumber);
         File file = new File(pathname);
         BidiMap<String, String> sBox = SBoxProvider.readFromFile(file, 3);
@@ -74,15 +75,18 @@ public class Main {
 
         List<LinearApproximation> approximations = analyzer.getSPNApproximations(table, inputs);
 
-        String key = "110101001";
+        String key = "011010111";
         logger.info("Key: " + key);
-        int numberOfPairs = 100;
+        int numberOfPairs = 200;
         Map<String, String> pairs = analyzer.generateCiphertextAndPlaintext(numberOfPairs, key);
         logger.info("Plain and ciphertext sample pairs");
         pairs.entrySet().stream().limit(5).forEach(entry ->
                 logger.info("{} --- {}", entry.getKey(), entry.getValue()));
         List<LinearApproximation> keyEquations = analyzer.getKeyEquations(approximations, pairs);
         logger.info("Key equations");
-        keyEquations.forEach(equation -> logger.info(equation.toString()));
+        IntStream.range(0, keyEquations.size()).forEach(i -> {
+            logger.info("Input {}; Equation: {}", inputs.get(i), keyEquations.get(i));
+        });
+        //keyEquations.forEach(equation -> logger.info(equation.toString()));
     }
 }
